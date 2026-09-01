@@ -29,6 +29,17 @@ procédures de vérification et les raisons derrière chaque choix.
 | Images | **fal.ai** | Together AI n'expose **aucun** modèle image dans LobeChat. fal.ai en propose cinq en Flux.1. |
 | Fichiers | **Cloudflare R2**, bucket privé | Vercel n'a pas de disque persistant. Bucket privé = fichiers servis par URL signée temporaire. |
 
+## Correctif porté par le fork
+
+Le fork `Ariion/lobehub` porte un correctif de migration sans lequel le
+déploiement échoue : LobeChat active l'extension `pg_search`, que Neon a
+dépréciée et refuse. Toutes les migrations tournant dans une seule transaction,
+ce refus annulait le schéma entier. → `DEPLOIEMENT.md`, « Panne connue »
+
+Conséquence assumée : **la recherche par mot-clé dans les conversations est
+indisponible**. Tout le reste fonctionne. Après un « Sync fork », vérifier que
+le correctif est toujours présent.
+
 ## Les trois règles à ne pas oublier
 
 1. **Ne jamais créer de workspace.** C'est la seule chose qui sépare les deux

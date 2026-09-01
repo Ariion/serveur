@@ -205,6 +205,42 @@ rendraient chaque fichier lisible par simple URL, sans authentification.
 
 ---
 
+### Panne connue : `pg_search is deprecated` (corrigée)
+
+Si le journal se termine par :
+
+```
+❌ Database migrate failed
+extension "pg_search" is deprecated and no longer allowed
+```
+
+…le build applicatif a **réussi** ; seule la création des tables a échoué.
+
+`pg_search` est l'extension de recherche plein texte que LobeChat active dans
+sa migration `0090`. Neon l'a dépréciée et la refuse désormais. Comme drizzle
+applique toutes les migrations dans **une seule transaction**, ce refus annulait
+le schéma entier — donc tout le déploiement — pour une fonctionnalité
+optionnelle. Ce n'est pas une erreur de configuration, et ce n'était pas
+corrigé en amont.
+
+Le fork porte le correctif (commit `1bb48c3`) : `0090` tente l'activation et
+poursuit si l'hôte refuse ; `0093` ne crée ses 14 index BM25 que si l'extension
+est réellement présente. Les instructions d'origine sont conservées à
+l'identique sous une garde, donc le comportement reste inchangé sur un Postgres
+qui supporte `pg_search`.
+
+**Conséquence à connaître : la recherche par mot-clé dans les conversations est
+indisponible** (elle renvoie une erreur — l'opérateur `bm25` n'existe pas sans
+l'extension). Le chat, l'historique, les comptes et l'isolation ne sont pas
+affectés. Pour la retrouver, il faudrait un Postgres supportant `pg_search` ou
+un Elasticsearch via `FTS_SEARCH_PROVIDER=elasticsearch` — disproportionné à
+deux.
+
+Ce correctif fait diverger le fork de l'amont. Après un « Sync fork », vérifier
+qu'il est toujours là : sans lui, le déploiement échouera de nouveau.
+
+---
+
 ## 6. Vérifier l'isolation
 
 **Ne considère pas le déploiement terminé avant d'avoir fait passer cette
@@ -237,12 +273,12 @@ Depuis le compte **B**, encore connecté :
 | 1 | Liste des conversations dans la barre latérale | **Seule** la conversation BROCOLI-99. Aucune trace d'ARTICHAUT. |
 | 2 | Demander à l'assistant : `Quel mot de passe secret t'ai-je donné ?` | Il répond BROCOLI-99, ou ne sait pas. **Jamais ARTICHAUT-42.** |
 | 3 | Galerie d'images | Seul le brocoli. Pas l'artichaut. |
-| 4 | Recherche globale sur `ARTICHAUT` | Aucun résultat. |
+| 4 | *(recherche par mot-clé indisponible — voir la panne `pg_search` ci-dessus)* | — |
 | 5 | Paramètres → clés API | Aucune clé saisie par le compte A n'apparaît. |
 
 Puis le contrôle croisé, celui qu'on oublie : **reconnecte-toi sur le compte
-A** et refais les points 1 à 4 en cherchant `BROCOLI`. L'isolation doit tenir
-dans les deux sens.
+A** et refais les points 1 à 3 en guettant toute trace de `BROCOLI`.
+L'isolation doit tenir dans les deux sens.
 
 Enfin, le contrôle d'inscription : en navigation privée, tente de créer un
 compte avec une **troisième** adresse. Ce doit être refusé

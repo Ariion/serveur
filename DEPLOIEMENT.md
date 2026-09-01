@@ -135,6 +135,13 @@ Facturation à l'image. `flux/schnell` est le moins cher pour tester ;
 sans lui, la génération d'images ne fonctionne pas : Vercel n'a pas de disque
 persistant.
 
+> **Démarrage en texte seul.** fal.ai et R2 sont facultatifs au premier
+> déploiement : sans eux, LobeChat fonctionne pleinement en texte (seules la
+> génération d'images et les pièces jointes sont indisponibles). Pour les
+> ajouter plus tard, il suffit de créer le bucket, d'ajouter `FAL_API_KEY` et
+> les cinq variables `S3_*` dans Vercel, puis de redéployer — rien à refaire,
+> et les conversations existantes ne bougent pas.
+
 1. <https://dash.cloudflare.com> → R2 → **Create bucket**, nomme-le `lobechat`
 2. **Laisse le bucket privé.** Ne l'expose sur aucun domaine public, n'active
    pas l'accès public — c'est ce qui garde vos images inaccessibles sans
@@ -167,12 +174,12 @@ build échoue à l'étape de migration. Tout saisir d'un coup, maintenant.
 | `JWKS_KEY` | étape 3, sur une seule ligne |
 | `AUTH_ALLOWED_EMAILS` | **vos deux adresses complètes, séparées par une virgule, sans espace** |
 | `DEEPSEEK_API_KEY` | étape 4 |
-| `FAL_API_KEY` | étape 4 |
-| `S3_ACCESS_KEY_ID` | R2 |
-| `S3_SECRET_ACCESS_KEY` | R2 |
-| `S3_BUCKET` | `lobechat` |
-| `S3_ENDPOINT` | `https://<account_id>.r2.cloudflarestorage.com` |
-| `S3_REGION` | `auto` |
+| `FAL_API_KEY` | étape 4 — *omettre si démarrage en texte seul* |
+| `S3_ACCESS_KEY_ID` | R2 — *omettre si texte seul* |
+| `S3_SECRET_ACCESS_KEY` | R2 — *omettre si texte seul* |
+| `S3_BUCKET` | `lobechat` — *omettre si texte seul* |
+| `S3_ENDPOINT` | `https://<account_id>.r2.cloudflarestorage.com` — *omettre si texte seul* |
+| `S3_REGION` | `auto` — *omettre si texte seul* |
 
 `.env.vercel.example` reprend cette liste avec le détail de chaque variable.
 
@@ -212,14 +219,14 @@ qu'elle a pourtant le droit de lire.
 1. Ouvre l'URL de production → **Sign up** → crée le compte **A** (aardesign)
 2. Lance une conversation reconnaissable, par exemple :
    > `Retiens ce mot de passe secret : ARTICHAUT-42. Répète-le.`
-3. Génère une image (n'importe quel prompt distinctif, « un artichaut violet »)
+3. Génère une image (« un artichaut violet ») — *sauter si démarrage en texte seul*
 4. **Déconnecte-toi complètement**
 5. **Fenêtre de navigation privée**, ou un autre navigateur — pas un simple
    onglet : il faut être sûr qu'aucun cookie de session ne traîne
 6. **Sign up** → compte **B** (procomsolution)
 7. Conversation distincte :
    > `Retiens ce mot de passe secret : BROCOLI-99. Répète-le.`
-8. Génère une image différente (« un brocoli doré »)
+8. Génère une image différente (« un brocoli doré ») — *idem, sauter si texte seul*
 
 ### 6b. Contrôles dans le navigateur
 

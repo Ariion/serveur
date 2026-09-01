@@ -27,7 +27,7 @@ procédures de vérification et les raisons derrière chaque choix.
 | Auth | **Better Auth** (intégré) | Clerk et NextAuth ont été retirés de LobeChat v2 — Better Auth est la seule option. Aucun service tiers à créer. |
 | Texte | **DeepSeek** | `deepseek-v4-flash`, `deepseek-v4-pro`. |
 | Images | **fal.ai** | Together AI n'expose **aucun** modèle image dans LobeChat. fal.ai en propose cinq en Flux.1. |
-| Fichiers | **Cloudflare R2**, bucket privé | Vercel n'a pas de disque persistant. Bucket privé = fichiers servis par URL signée temporaire. |
+| Fichiers | **Cloudflare R2**, bucket privé | **Obligatoire même sans images** : chaque envoi de message construit un `FileService`. Bucket privé = fichiers servis par URL signée temporaire. |
 
 ## Correctif porté par le fork
 

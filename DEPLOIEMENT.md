@@ -135,12 +135,18 @@ Facturation à l'image. `flux/schnell` est le moins cher pour tester ;
 sans lui, la génération d'images ne fonctionne pas : Vercel n'a pas de disque
 persistant.
 
-> **Démarrage en texte seul.** fal.ai et R2 sont facultatifs au premier
-> déploiement : sans eux, LobeChat fonctionne pleinement en texte (seules la
-> génération d'images et les pièces jointes sont indisponibles). Pour les
-> ajouter plus tard, il suffit de créer le bucket, d'ajouter `FAL_API_KEY` et
-> les cinq variables `S3_*` dans Vercel, puis de redéployer — rien à refaire,
-> et les conversations existantes ne bougent pas.
+> **S3 est obligatoire, y compris pour le texte seul.** Contrairement à ce que
+> laisse penser la documentation amont, LobeChat v2 ne peut pas envoyer un
+> message sans stockage objet configuré : `createHistoryMessagesLoader`
+> (`apps/server/src/services/aiAgent/pipeline/operationPrep.ts`) construit un
+> `FileService` de façon inconditionnelle à chaque envoi, et le constructeur de
+> `S3StaticFileImpl` instancie le client S3 immédiatement — il lève
+> `S3 environment variables are not set completely` si les variables manquent.
+> Le symptôme est un bandeau « Échec de l'envoi » sur le premier message, alors
+> que la connexion et l'interface fonctionnent parfaitement.
+>
+> Seul **fal.ai** est réellement facultatif : sans `FAL_API_KEY`, tout marche
+> sauf la génération d'images, et la clé s'ajoute plus tard en une variable.
 
 1. <https://dash.cloudflare.com> → R2 → **Create bucket**, nomme-le `lobechat`
 2. **Laisse le bucket privé.** Ne l'expose sur aucun domaine public, n'active
@@ -174,12 +180,12 @@ build échoue à l'étape de migration. Tout saisir d'un coup, maintenant.
 | `JWKS_KEY` | étape 3, sur une seule ligne |
 | `AUTH_ALLOWED_EMAILS` | **vos deux adresses complètes, séparées par une virgule, sans espace** |
 | `DEEPSEEK_API_KEY` | étape 4 |
-| `FAL_API_KEY` | étape 4 — *omettre si démarrage en texte seul* |
-| `S3_ACCESS_KEY_ID` | R2 — *omettre si texte seul* |
-| `S3_SECRET_ACCESS_KEY` | R2 — *omettre si texte seul* |
-| `S3_BUCKET` | `lobechat` — *omettre si texte seul* |
-| `S3_ENDPOINT` | `https://<account_id>.r2.cloudflarestorage.com` — *omettre si texte seul* |
-| `S3_REGION` | `auto` — *omettre si texte seul* |
+| `FAL_API_KEY` | étape 4 — *seule variable réellement facultative* |
+| `S3_ACCESS_KEY_ID` | R2 — **obligatoire** |
+| `S3_SECRET_ACCESS_KEY` | R2 — **obligatoire** |
+| `S3_BUCKET` | `lobechat` — **obligatoire** |
+| `S3_ENDPOINT` | `https://<account_id>.r2.cloudflarestorage.com` — **obligatoire** |
+| `S3_REGION` | `auto` — **obligatoire** |
 
 `.env.vercel.example` reprend cette liste avec le détail de chaque variable.
 

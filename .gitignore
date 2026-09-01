@@ -1,0 +1,8 @@
+# Ne jamais commiter de secrets : les valeurs vivent dans Vercel,
+# seul le modèle .env.vercel.example est versionné.
+.env
+.env.*
+!.env.vercel.example
+
+node_modules/
+.DS_Store

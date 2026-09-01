@@ -17,7 +17,8 @@ procédures de vérification et les raisons derrière chaque choix.
 | **[ISOLATION.md](./ISOLATION.md)** | Ce qui garantit la séparation des comptes, ce qui la casserait, et les limites de l'audit. |
 | **[.env.vercel.example](./.env.vercel.example)** | Toutes les variables Vercel, commentées une par une. |
 | `scripts/generer-secrets.sh` | Génère `AUTH_SECRET`, `KEY_VAULTS_SECRET` et `JWKS_KEY`. |
-| `scripts/verifier-isolation.sql` | Contrôle en base que l'isolation tient. À relancer après chaque mise à jour. |
+| `scripts/verifier-isolation-neon.sql` | **Contrôle en base — à coller dans le SQL Editor de Neon.** À relancer après chaque mise à jour. |
+| `scripts/verifier-isolation.sql` | Même contrôle, version détaillée pour `psql` en ligne de commande. |
 
 ## Choix retenus
 

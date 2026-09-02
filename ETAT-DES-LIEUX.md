@@ -12,6 +12,7 @@ diagnostic dans le code de `lobehub/lobe-chat` v2.2.13.
 | Chat texte DeepSeek | Réponses obtenues sur les deux comptes |
 | Persistance des conversations | Écrites dans Neon |
 | Stockage objet | R2 privé, URLs pré-signées |
+| **Isolation des deux comptes** | **Vérifiée en base le 2 septembre 2026 : 7 contrôles sur 7 en OK** |
 | Génération d'images | GPT Image 2, image produite et re-servie depuis R2 |
 
 ## Manquant, et pourquoi
@@ -71,3 +72,29 @@ suivant**. Renommer ou ajouter une variable sans redéployer ne change rien.
 
 Le profil d'agent (barre latérale → « Profil de l'agent ») couvre gratuitement
 le besoin « que l'assistant sache qui je suis », sans embeddings ni recherche.
+
+
+## Résultat du contrôle d'isolation
+
+Exécuté dans le SQL Editor de Neon sur la base de production, deux comptes
+créés et chacun sa conversation témoin :
+
+| Contrôle | Valeur | Verdict |
+|---|---|---|
+| Nombre de comptes | 2 | OK |
+| Espaces partagés (doit être 0) | 0 | OK |
+| Membres d'espaces partagés | 0 | OK |
+| Conversations rattachées à un espace | 0 | OK |
+| Images rattachées à un espace | 0 | OK |
+| Messages chez le mauvais propriétaire | 0 | OK |
+| Conversations sans propriétaire | 0 | OK |
+
+Aucun workspace n'existe : le régime de partage est donc inatteignable, et
+chaque lecture reste filtrée par `user_id`. Voir `ISOLATION.md` §1.
+
+Note : le SQL Editor de Neon s'ouvre avec un exemple pré-rempli qui crée une
+table `playing_with_neon`. Elle est sans rapport avec le schéma de LobeChat et
+ne masque aucune de ses tables — les contrôles ont bien porté sur les vraies
+données. Elle peut être supprimée : `DROP TABLE IF EXISTS playing_with_neon;`
+
+**À relancer après chaque mise à jour de LobeChat.**

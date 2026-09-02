@@ -12,16 +12,9 @@ diagnostic dans le code de `lobehub/lobe-chat` v2.2.13.
 | Chat texte DeepSeek | Réponses obtenues sur les deux comptes |
 | Persistance des conversations | Écrites dans Neon |
 | Stockage objet | R2 privé, URLs pré-signées |
+| Génération d'images | GPT Image 2, image produite et re-servie depuis R2 |
 
 ## Manquant, et pourquoi
-
-### Génération d'images — une variable
-
-`FAL_API_KEY` n'a jamais été posée dans Vercel : elle avait été retirée
-volontairement tant que le stockage n'existait pas, puisque la génération
-échouait à l'enregistrement. R2 étant configuré, l'obstacle a disparu.
-
-**Coût : nul.** La clé existe déjà, fal.ai facture à l'image.
 
 ### Mémoire à long terme — un fournisseur d'embeddings
 
@@ -58,10 +51,22 @@ Deux voies, toutes deux lourdes pour deux personnes :
 
 **C'est le seul manque sans solution légère.** À arbitrer selon l'usage réel.
 
+## Piège rencontré : le nom de la variable OpenAI
+
+La variable avait été saisie `OPEN_AI_KEY`. Le code lit `OPENAI_API_KEY`
+(`packages/env/src/llm.ts:263`) et `OPEN_AI_KEY` n'est lu nulle part : la clé
+n'atteignait donc jamais l'application. Le symptôme était trompeur — LobeChat
+affiche « Clé API invalide » aussi bien quand la clé est absente (ligne 382 de
+`openaiCompatibleFactory`) que quand OpenAI la refuse en 401 (ligne 1420),
+alors que la clé était parfaitement valide et le crédit intact.
+
+Rappel : dans Vercel, une variable n'est prise en compte qu'au **déploiement
+suivant**. Renommer ou ajouter une variable sans redéployer ne change rien.
+
 ## Ordre recommandé
 
-1. Images — une variable, effet immédiat
-2. Mémoire — un compte, si la mémoire automatique est jugée nécessaire
+1. ~~Images~~ — fait, via GPT Image 2 (le crédit OpenAI couvre images ET mémoire)
+2. Mémoire — à revérifier maintenant que la clé OpenAI arrive à l'application
 3. Recherche — à trancher plus tard, en connaissance de cause
 
 Le profil d'agent (barre latérale → « Profil de l'agent ») couvre gratuitement

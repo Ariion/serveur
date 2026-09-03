@@ -39,14 +39,36 @@ la passerelle Vercel.
 **Coût : le minimum de rechargement du fournisseur**, pas l'usage — quelques
 milliers de souvenirs coûtent des fractions de centime.
 
-### Recherche par mot-clé — un service ou un autre hébergeur
+### Recherche dans la mémoire — corrigée par un repli en ILIKE
 
 Neon a déprécié `pg_search`. Le correctif de migration a rendu le déploiement
 possible en désactivant les index BM25 ; en contrepartie l'opérateur `@@@`
-n'existe plus et les requêtes de recherche échouent.
+n'existe plus, et tout code qui l'émet échoue avec « schema "paradedb" does
+not exist ».
 
-`FTS_SEARCH_PROVIDER` n'accepte que `pg_search` ou `elasticsearch` — il n'y a
-pas de mode « sans recherche », ni de repli en `ILIKE` dans le code.
+Trois passes ont été nécessaires, parce que le code émet du BM25 à trois
+endroits distincts :
+
+| Commit | Ce qui était couvert |
+| --- | --- |
+| `1bb48c3` | les migrations `0090` / `0093` — le déploiement lui-même |
+| `80522f5` | `model.ts` et les couches `activity` / `experience` / `identity` |
+| `31e99b7` | `query.ts` — le chemin de l'**outil mémoire de l'agent** |
+
+La troisième était la bonne : `searchMemory` → `search*Lexical` (cinq couches)
+appelait `buildBm25MatchCondition` sans condition. D'où le symptôme qui a duré :
+l'**écriture** d'un souvenir fonctionnait, la **recherche** échouait toujours.
+
+Le repli remplace l'expression BM25 par un `ILIKE` sur les mêmes colonnes,
+métacaractères LIKE échappés. Vérifié sur un PostgreSQL 16 réel sans
+`pg_search` : le SQL BM25 reste identique quand l'extension est là, et le repli
+retrouve les souvenirs par le titre parent comme par les colonnes de la couche.
+
+### Recherche globale par mot-clé — toujours indisponible
+
+Distincte de la précédente : c'est la barre de recherche générale (sujets,
+messages, fichiers). Elle passe par `FTS_SEARCH_PROVIDER`, qui n'accepte que
+`pg_search` ou `elasticsearch` — il n'y a pas de mode « sans recherche ».
 
 Deux voies, toutes deux lourdes pour deux personnes :
 - un **Elasticsearch** (`ES_URL`, `ES_API_KEY`) — un service de plus ;
@@ -69,8 +91,8 @@ suivant**. Renommer ou ajouter une variable sans redéployer ne change rien.
 ## Ordre recommandé
 
 1. ~~Images~~ — fait, via GPT Image 2 (le crédit OpenAI couvre images ET mémoire)
-2. Mémoire — à revérifier maintenant que la clé OpenAI arrive à l'application
-3. Recherche — à trancher plus tard, en connaissance de cause
+2. ~~Mémoire~~ — écriture puis recherche corrigées (`31e99b7`), à confirmer à l'usage
+3. Recherche globale — à trancher plus tard, en connaissance de cause
 
 Le profil d'agent (barre latérale → « Profil de l'agent ») couvre gratuitement
 le besoin « que l'assistant sache qui je suis », sans embeddings ni recherche.

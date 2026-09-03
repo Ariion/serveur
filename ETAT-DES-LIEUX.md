@@ -13,6 +13,8 @@ diagnostic dans le code de `lobehub/lobe-chat` v2.2.13.
 | Persistance des conversations | Écrites dans Neon |
 | Stockage objet | R2 privé, URLs pré-signées |
 | **Isolation des deux comptes** | **Vérifiée en base le 2 septembre 2026 : 7 contrôles sur 7 en OK** |
+| Domaine propre | `chat.aardesign.fr` — CNAME chez Hostinger, `APP_URL` posée |
+| Recherche web | Tavily (palier gratuit, sans carte) : `TAVILY_API_KEY` + `SEARCH_PROVIDERS=tavily` |
 | Génération d'images | GPT Image 2, image produite et re-servie depuis R2 |
 
 ## Manquant, et pourquoi
@@ -98,3 +100,20 @@ ne masque aucune de ses tables — les contrôles ont bien porté sur les vraies
 données. Elle peut être supprimée : `DROP TABLE IF EXISTS playing_with_neon;`
 
 **À relancer après chaque mise à jour de LobeChat.**
+
+
+## Recherche web
+
+`SEARCH_PROVIDERS` est une liste de moteurs séparés par des virgules, vide par
+défaut : poser seulement la clé d'un moteur ne suffit pas, il faut aussi le
+nommer là. Onze implémentations existent (`apps/server/src/services/search/impls/`),
+dont cinq accessibles sans infrastructure : `tavily`, `jina`, `brave`, `exa`
+(une clé chacun) et `searxng` (une URL, mais les instances publiques bloquent
+presque toutes les appels API).
+
+Tavily a été retenu : conçu pour les agents, il renvoie du contenu déjà extrait
+plutôt que des liens à parcourir. Le plan **Free** (lien discret « Continue on
+Free » sur la page de choix) est un plafond dur sans carte, contrairement au
+« Pay as you go » qui facture au-delà du quota.
+
+Pour ajouter un moteur de secours : `SEARCH_PROVIDERS=tavily,jina`.

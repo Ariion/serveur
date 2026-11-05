@@ -86,6 +86,7 @@ désactiver.
 | Une fois par mois | Sauvegarder la base : Neon → Backups, ou un `pg_dump` de la chaîne de connexion |
 | Après chaque « Sync fork » | Revérifier les trois correctifs, puis relancer `scripts/verifier-isolation-neon.sql` |
 | Si un compte s'ajoute un jour | Ajouter l'adresse à `AUTH_ALLOWED_EMAILS` **et redéployer** — une variable Vercel ne prend effet qu'au déploiement suivant |
+| Mot de passe perdu | Aucun formulaire de changement n'existe dans l'interface : le bouton envoie un e-mail, et le SMTP n'est pas configuré. Procédure de réinitialisation en base → `DEPLOIEMENT.md` §8 |
 
 Deux pièges qui ont coûté du temps et qui se reproduiront :
 

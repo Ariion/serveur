@@ -348,3 +348,62 @@ conversations comptent vraiment, prévois un `pg_dump` périodique.
 Tu ne paies en pratique que DeepSeek (quelques centimes par mois à deux) et
 fal.ai (à l'image). Pense à `AI_IMAGE_DEFAULT_IMAGE_NUM=1` : LobeChat génère
 **quatre** images par requête par défaut, donc quatre fois la facture.
+
+## 8. Mot de passe oublié
+
+**Il n'existe aucun formulaire « ancien mot de passe → nouveau » dans
+LobeChat v2.** Le bouton « Changer le mot de passe » (Paramètres → *Profil*,
+`src/features/Settings/profile/features/PasswordRow.tsx`) appelle
+`requestPasswordReset` : il envoie un e-mail, exactement comme « Mot de passe
+oublié ».
+
+Cet envoi passe par `EmailService`, qui exige `SMTP_USER` et `SMTP_PASS` (et en
+pratique `SMTP_HOST`, sans quoi il tente `localhost`). **Ces variables ne sont
+pas configurées ici.** Conséquence : tant qu'on ne les pose pas, *personne* ne
+peut changer son mot de passe depuis l'interface.
+
+### Réinitialiser sans serveur d'e-mail
+
+Possible parce que le code accepte les empreintes bcrypt (`$2a$` / `$2b$`), un
+reliquat de compatibilité avec Clerk — voir `verify()` dans
+`src/libs/better-auth/define-config.ts`, qui importe `bcryptjs`. Or pgcrypto
+produit exactement ce format.
+
+Dans le **SQL Editor de Neon**, un bloc à la fois :
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+```
+
+```sql
+-- Contrôle : une ligne, provider_id = 'credential'
+SELECT a.provider_id, u.email
+FROM accounts a
+JOIN users u ON u.id = a.user_id
+WHERE u.email = 'adresse@exemple.fr';
+```
+
+```sql
+UPDATE accounts
+SET password = crypt('NOUVEAU-MOT-DE-PASSE', gen_salt('bf', 10))
+WHERE provider_id = 'credential'
+  AND user_id = (SELECT id FROM users WHERE email = 'adresse@exemple.fr');
+```
+
+Neon doit répondre `UPDATE 1`. `UPDATE 0` signifie que rien n'a changé —
+vérifier l'adresse et le `provider_id`.
+
+Contraintes : **8 à 64 caractères** (`minPasswordLength` / `maxPasswordLength`),
+et pas d'apostrophe, qui casserait la requête. Les conversations, la mémoire et
+les fichiers sont intacts : seule l'empreinte change.
+
+Vérifié sur un PostgreSQL 16 réel : `crypt(..., gen_salt('bf', 10))` produit
+bien un `$2a$`, que `bcryptjs.compareSync` accepte et qu'il refuse pour un
+mauvais mot de passe.
+
+**Deux réserves.** Le mot de passe apparaît en clair dans l'historique du SQL
+Editor — le supprimer après coup (onglet *History*). Et c'est un contournement :
+la vraie réponse reste de poser `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+`SMTP_PASS`, `SMTP_FROM` (un mot de passe d'application Gmail suffit) puis de
+redéployer, après quoi la récupération par e-mail fonctionne pour les deux
+comptes.
